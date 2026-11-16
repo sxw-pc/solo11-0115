@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS run(id INTEGER PRIMARY KEY,version TEXT NOT NULL,stat
 CREATE TABLE IF NOT EXISTS episode(id INTEGER PRIMARY KEY,run_id INT REFERENCES run(id),asset TEXT REFERENCES asset(id),start TEXT,end TEXT,status TEXT,replaces TEXT);
 CREATE TABLE IF NOT EXISTS evidence(episode_id INT REFERENCES episode(id),point_id INT REFERENCES point(id),PRIMARY KEY(episode_id,point_id));
 CREATE TABLE IF NOT EXISTS issue(id INTEGER PRIMARY KEY,code TEXT NOT NULL,subject TEXT,detail TEXT);
+CREATE TABLE IF NOT EXISTS fleet_decision(run_id INT PRIMARY KEY REFERENCES run(id),status TEXT NOT NULL,assets TEXT NOT NULL,episode_ids TEXT NOT NULL,reason TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS work_order(episode_id INT PRIMARY KEY REFERENCES episode(id),run_id INT NOT NULL REFERENCES run(id),status TEXT NOT NULL,priority TEXT NOT NULL,reason TEXT NOT NULL,evidence TEXT NOT NULL);
 """
 def connect(path):
     p=Path(path);p.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(p);db.row_factory=sqlite3.Row;db.executescript(SCHEMA);return db
