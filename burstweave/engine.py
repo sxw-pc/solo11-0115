@@ -14,9 +14,15 @@ def setup(db_path,contract):
         for a in contract['assets']:db.execute('INSERT OR IGNORE INTO asset VALUES (?)',(a,))
         for s in contract['sensors']:db.execute('INSERT OR IGNORE INTO sensor VALUES (?,?,?)',(s['id'],s['asset'],s['role']))
         for h in contract.get('health',[]):
-            dt(h['start']);dt(h['end']);db.execute('INSERT INTO health(sensor,start,end,status) VALUES (?,?,?,?)',(h['sensor'],h['start'],h['end'],h['status']))
+            dt(h['start']);dt(h['end'])
+            key=(h['sensor'],h['start'],h['end'],h['status'])
+            if not db.execute("SELECT 1 FROM health WHERE sensor=? AND start=? AND end=? AND status=? AND origin='contract'",key).fetchone():
+                db.execute('INSERT INTO health(sensor,start,end,status) VALUES (?,?,?,?)',key)
         for m in contract.get('maintenance',[]):
-            dt(m['start']);dt(m['end']);db.execute('INSERT INTO maintenance(asset,start,end) VALUES (?,?,?)',(m['asset'],m['start'],m['end']))
+            dt(m['start']);dt(m['end'])
+            key=(m['asset'],m['start'],m['end'])
+            if not db.execute('SELECT 1 FROM maintenance WHERE asset=? AND start=? AND end=?',key).fetchone():
+                db.execute('INSERT INTO maintenance(asset,start,end) VALUES (?,?,?)',key)
     db.close()
 def ingest(db_path,path):
     raw=Path(path).read_bytes();lines=raw.decode().splitlines();db=connect(db_path)
@@ -68,9 +74,19 @@ def candidates(points,gap=timedelta(minutes=10)):
     return result
 def health_slice(points,start,end):
     relevant=[p for p in points if start<=p['time']<=end and p['kind'] in {'heartbeat','stop','start'}]
-    stops=[p for p in relevant if p['kind']=='stop']
+    # A stop followed by a restart before the candidate must not poison it.
+    state='unknown';interrupted=False
+    candidate_start=start+timedelta(minutes=30)
+    candidate_end=end-timedelta(minutes=30)
+    for p in sorted(relevant,key=lambda item:(item['time'],item['id'])):
+        if p['time']>candidate_end:continue
+        if p['kind']=='stop':
+            state='stopped'
+            if p['time']>=candidate_start:interrupted=True
+        elif p['kind']=='start':state='running'
     beats=[p for p in relevant if p['kind']=='heartbeat']
-    return {'stopped':bool(stops),'heartbeat_seen':bool(beats),'events':[p['id'] for p in relevant]}
+    return {'stopped':state=='stopped' or interrupted,
+            'heartbeat_seen':bool(beats),'events':[p['id'] for p in relevant]}
 def derive_health(db,points,max_gap=timedelta(minutes=30)):
     db.execute("DELETE FROM health WHERE origin='derived'")
     by_sensor=defaultdict(list)
@@ -103,9 +119,16 @@ def correlate(db,cands,gap=timedelta(minutes=5)):
         else:groups.append({'asset':asset,'start':start,'end':end,'points':list(cand),'roles':{role}})
     return groups
 def reconcile(db_path,gap_minutes=10):
+    if gap_minutes <= 0: raise ValueError('invalid_gap')
     db=connect(db_path);raw=[dict(x) for x in db.execute('SELECT * FROM point ORDER BY at,id')]
     aligned=align(db,raw);cands=candidates(aligned,timedelta(minutes=gap_minutes));groups=correlate(db,cands)
-    version=sha(json.dumps([(p['id'],p['hash']) for p in raw],sort_keys=True).encode());result=[]
+    # A run freezes both observations and the rules/contract that interpret them.
+    sensors=[tuple(x) for x in db.execute('SELECT id,asset_id,role FROM sensor ORDER BY id')]
+    health=[tuple(x) for x in db.execute("SELECT sensor,start,end,status FROM health WHERE origin='contract' ORDER BY id")]
+    maintenance=[tuple(x) for x in db.execute('SELECT asset,start,end FROM maintenance ORDER BY id')]
+    snapshot={'points':[(p['id'],p['hash']) for p in raw], 'gap_minutes':gap_minutes,
+              'sensors':sensors, 'health':health, 'maintenance':maintenance}
+    version=sha(json.dumps(snapshot,sort_keys=True).encode());result=[]
     with db:
         old=db.execute('SELECT id FROM run WHERE version=?',(version,)).fetchone()
         if old:return old['id']

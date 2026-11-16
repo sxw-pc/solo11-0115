@@ -88,3 +88,58 @@ def test_partial_maintenance_keeps_episode_pending(tmp_path):
     rows=[point(1,'2026-01-01T00:00:00Z','anchor'),point(2,'2026-01-01T01:00:00Z','heartbeat'),point(3,'2026-01-01T01:00:01Z'),point(4,'2026-01-01T01:05:00Z')]
     engine.ingest(db,write(tmp_path,rows));rid=engine.reconcile(db)
     assert engine.connect(db).execute('SELECT status FROM episode WHERE run_id=?',(rid,)).fetchone()[0]=='待核'
+
+
+def test_rule_gap_change_creates_new_business_decision(tmp_path):
+    db=setup(tmp_path)
+    rows=[point(1,'2026-01-01T00:00:00Z','anchor'),
+          point(2,'2026-01-01T01:00:00Z'),point(3,'2026-01-01T01:12:00Z')]
+    engine.ingest(db,write(tmp_path,rows))
+    narrow=engine.reconcile(db,gap_minutes=10)
+    wide=engine.reconcile(db,gap_minutes=15)
+    conn=engine.connect(db)
+    assert narrow!=wide
+    assert conn.execute('SELECT count(*) FROM episode WHERE run_id=?',(narrow,)).fetchone()[0]==2
+    assert conn.execute('SELECT count(*) FROM episode WHERE run_id=?',(wide,)).fetchone()[0]==1
+    assert engine.reconcile(db,gap_minutes=15)==wide
+
+def test_maintenance_change_revises_decision_without_new_points(tmp_path):
+    db=setup(tmp_path)
+    rows=[point(1,'2026-01-01T00:00:00Z','anchor'),
+          point(2,'2026-01-01T01:00:00Z','heartbeat'),
+          point(3,'2026-01-01T01:00:01Z')]
+    engine.ingest(db,write(tmp_path,rows))
+    before=engine.reconcile(db)
+    conn=engine.connect(db)
+    assert conn.execute('SELECT status FROM episode WHERE run_id=?',(before,)).fetchone()[0]=='可信'
+    with conn:
+        conn.execute('INSERT INTO maintenance(asset,start,end) VALUES (?,?,?)',
+                     ('A','2026-01-01T00:30:00Z','2026-01-01T01:30:00Z'))
+    after=engine.reconcile(db)
+    assert after!=before
+    assert conn.execute('SELECT status FROM episode WHERE run_id=?',(after,)).fetchone()[0]=='维护影响'
+    assert conn.execute('SELECT status FROM episode WHERE run_id=?',(before,)).fetchone()[0]=='可信'
+
+
+def test_recovered_stop_does_not_poison_later_episode(tmp_path):
+    db=setup(tmp_path)
+    rows=[point(1,'2026-01-01T00:00:00Z','anchor'),
+          point(2,'2026-01-01T00:40:00Z','stop'),
+          point(3,'2026-01-01T00:45:00Z','start'),
+          point(4,'2026-01-01T01:00:00Z','heartbeat'),
+          point(5,'2026-01-01T01:00:01Z')]
+    engine.ingest(db,write(tmp_path,rows))
+    rid=engine.reconcile(db)
+    assert engine.connect(db).execute('SELECT status FROM episode WHERE run_id=?',(rid,)).fetchone()[0]=='可信'
+
+
+def test_reloading_same_contract_preserves_run_identity(tmp_path):
+    db=setup(tmp_path)
+    contract={'assets':['A'],'sensors':[{'id':'S','asset':'A','role':'heat'}],
+              'health':[{'sensor':'S','start':'2026-01-01T00:00:00Z',
+                         'end':'2026-01-02T00:00:00Z','status':'active'}]}
+    engine.ingest(db,write(tmp_path,[point(1,'2026-01-01T00:00:00Z','anchor'),
+                                     point(2,'2026-01-01T01:00:00Z')]))
+    first=engine.reconcile(db)
+    engine.setup(db,contract)
+    assert engine.reconcile(db)==first

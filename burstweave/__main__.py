@@ -13,6 +13,7 @@ def main():
     for n in ('align','health','candidates','correlate','classify','reconcile'):
         s=sub.add_parser(n);s.add_argument('--db',required=True)
         if n=='health':s.add_argument('--start',required=True);s.add_argument('--end',required=True)
+        if n in ('classify','reconcile'):s.add_argument('--gap-minutes',type=int,default=10)
     s=sub.add_parser('report');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True);s.add_argument('--out',required=True)
     x=p.parse_args()
     if x.cmd=='demo':demo()
@@ -26,6 +27,6 @@ def main():
         elif x.cmd=='candidates':result=[[p['id'] for p in group] for group in groups]
         else:result=[{'asset':g['asset'],'start':g['start'].isoformat(),'end':g['end'].isoformat(),'points':[p['id'] for p in g['points']]} for g in engine.correlate(conn,groups)]
         conn.close();print(json.dumps(result,ensure_ascii=False))
-    elif x.cmd in ('classify','reconcile'):print(engine.reconcile(x.db))
+    elif x.cmd in ('classify','reconcile'):print(engine.reconcile(x.db,x.gap_minutes))
     else:print(engine.report(x.db,x.run_id,x.out))
 if __name__=='__main__':main()
