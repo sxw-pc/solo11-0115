@@ -74,3 +74,17 @@ def test_health_intervals_derived_from_logs(tmp_path):
     conn=engine.connect(db);interval=conn.execute("SELECT start,end FROM health WHERE origin='derived'").fetchone()
     assert engine.dt(interval['start'])==engine.dt('2026-01-01T01:00:00Z')
     assert engine.dt(interval['end'])==engine.dt('2026-01-01T01:05:00Z')
+
+def test_anchor_drift_makes_episode_uncertain(tmp_path):
+    db=setup(tmp_path);a=point(1,'2026-01-01T00:00:00Z','anchor');a['offset_seconds']=0
+    b=point(2,'2026-01-01T00:30:00Z','anchor');b['offset_seconds']=180
+    engine.ingest(db,write(tmp_path,[a,b,point(3,'2026-01-01T01:00:00Z','heartbeat'),point(4,'2026-01-01T01:00:01Z')]))
+    rid=engine.reconcile(db)
+    assert engine.connect(db).execute('SELECT status FROM episode WHERE run_id=?',(rid,)).fetchone()[0]=='待核'
+
+def test_partial_maintenance_keeps_episode_pending(tmp_path):
+    db=setup(tmp_path);conn=engine.connect(db)
+    with conn:conn.execute('INSERT INTO maintenance(asset,start,end) VALUES (?,?,?)',('A','2026-01-01T01:01:00Z','2026-01-01T01:04:00Z'))
+    rows=[point(1,'2026-01-01T00:00:00Z','anchor'),point(2,'2026-01-01T01:00:00Z','heartbeat'),point(3,'2026-01-01T01:00:01Z'),point(4,'2026-01-01T01:05:00Z')]
+    engine.ingest(db,write(tmp_path,rows));rid=engine.reconcile(db)
+    assert engine.connect(db).execute('SELECT status FROM episode WHERE run_id=?',(rid,)).fetchone()[0]=='待核'
