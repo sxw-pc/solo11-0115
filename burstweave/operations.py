@@ -31,6 +31,8 @@ def fleet(path,run_id,min_assets=2):
 
 def triage(path,run_id):
     fleet(path,run_id)
+    from .topology import trace
+    trace(path,run_id)
     db=connect(path)
     try:
         with db:
@@ -38,13 +40,15 @@ def triage(path,run_id):
             if not run:raise ValueError('unknown_run')
             common=db.execute('SELECT episode_ids FROM fleet_decision WHERE run_id=?',(run_id,)).fetchone()
             common_ids=set(json.loads(common['episode_ids'])) if common else set()
+            propagated={x['source_episode'] for x in db.execute('SELECT source_episode FROM propagation_link WHERE run_id=?',(run_id,))}
+            propagated.update(x['target_episode'] for x in db.execute('SELECT target_episode FROM propagation_link WHERE run_id=?',(run_id,)))
             outcomes=[]
             for e in db.execute('SELECT * FROM episode WHERE run_id=? ORDER BY id',(run_id,)):
                 evidence=[x['point_id'] for x in db.execute('SELECT point_id FROM evidence WHERE episode_id=?',(e['id'],))]
                 if run['status']!='已闭合' or e['status']=='待核' or not evidence:status,priority,reason='待复核','none','evidence_gap'
                 elif e['status']=='维护影响':status,priority,reason='暂缓','none','planned_maintenance'
                 else:
-                    status='待派工';priority='critical' if e['id'] in common_ids else 'normal';reason='fleet_overlap' if priority=='critical' else 'isolated_fault'
+                    status='待派工';priority='critical' if e['id'] in common_ids or e['id'] in propagated else 'normal';reason='fleet_overlap' if e['id'] in common_ids else ('topology_spread' if e['id'] in propagated else 'isolated_fault')
                 db.execute('INSERT INTO work_order VALUES (?,?,?,?,?,?) ON CONFLICT(episode_id) DO UPDATE SET status=excluded.status,priority=excluded.priority,reason=excluded.reason,evidence=excluded.evidence',
                            (e['id'],run_id,status,priority,reason,json.dumps(evidence)))
                 outcomes.append({'episode_id':e['id'],'status':status,'priority':priority,'reason':reason})

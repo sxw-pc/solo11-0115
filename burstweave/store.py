@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS evidence(episode_id INT REFERENCES episode(id),point_
 CREATE TABLE IF NOT EXISTS issue(id INTEGER PRIMARY KEY,code TEXT NOT NULL,subject TEXT,detail TEXT);
 CREATE TABLE IF NOT EXISTS fleet_decision(run_id INT PRIMARY KEY REFERENCES run(id),status TEXT NOT NULL,assets TEXT NOT NULL,episode_ids TEXT NOT NULL,reason TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS work_order(episode_id INT PRIMARY KEY REFERENCES episode(id),run_id INT NOT NULL REFERENCES run(id),status TEXT NOT NULL,priority TEXT NOT NULL,reason TEXT NOT NULL,evidence TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS topology_edge(source_asset TEXT NOT NULL REFERENCES asset(id),target_asset TEXT NOT NULL REFERENCES asset(id),min_lag_minutes INT NOT NULL,max_lag_minutes INT NOT NULL,PRIMARY KEY(source_asset,target_asset));
+CREATE TABLE IF NOT EXISTS propagation_link(run_id INT NOT NULL REFERENCES run(id),source_episode INT NOT NULL REFERENCES episode(id),target_episode INT NOT NULL REFERENCES episode(id),lag_minutes REAL NOT NULL,PRIMARY KEY(run_id,source_episode,target_episode));
+CREATE TABLE IF NOT EXISTS propagation_decision(run_id INT NOT NULL REFERENCES run(id),root_episode INT NOT NULL REFERENCES episode(id),status TEXT NOT NULL,episode_ids TEXT NOT NULL,reason TEXT NOT NULL,PRIMARY KEY(run_id,root_episode));
 """
 def connect(path):
     p=Path(path);p.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(p);db.row_factory=sqlite3.Row;db.executescript(SCHEMA);return db

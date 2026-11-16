@@ -1,14 +1,16 @@
 import argparse,json,tempfile
 from pathlib import Path
-from . import engine,operations
+from . import engine,operations,topology
 def demo():
     root=Path(tempfile.mkdtemp(prefix='burstweave-'));db=root/'ledger.db'
     engine.setup(db,{'assets':['A','B'],'sensors':[{'id':'S1','asset':'A','role':'vibration'},{'id':'S2','asset':'B','role':'heat'}],'health':[{'sensor':s,'start':'2026-01-01T00:00:00Z','end':'2026-01-02T00:00:00Z','status':'active'} for s in ('S1','S2')]})
     rows=[]
     for sensor,device in (('S1','D1'),('S2','D2')):
-        rows += [{'sensor':sensor,'device':device,'seq':1,'kind':'anchor','at':'2026-01-01T00:00:00Z','offset_seconds':0},{'sensor':sensor,'device':device,'seq':2,'kind':'heartbeat','at':'2026-01-01T01:00:00Z'},{'sensor':sensor,'device':device,'seq':3,'kind':'anomaly','at':'2026-01-01T01:00:01Z','value':7}]
+        event_at='2026-01-01T01:00:01Z' if sensor=='S1' else '2026-01-01T01:05:01Z'
+        rows += [{'sensor':sensor,'device':device,'seq':1,'kind':'anchor','at':'2026-01-01T00:00:00Z','offset_seconds':0},{'sensor':sensor,'device':device,'seq':2,'kind':'heartbeat','at':event_at},{'sensor':sensor,'device':device,'seq':3,'kind':'anomaly','at':event_at,'value':7}]
     p=root/'events.jsonl';p.write_text('\n'.join(json.dumps(x) for x in rows));engine.ingest(db,p);rid=engine.reconcile(db)
-    print(operations.fleet(db,rid));print(operations.triage(db,rid));print(engine.report(db,rid,root/'report.json'))
+    topology.edge(db,'A','B',0,10)
+    print(operations.fleet(db,rid));print(topology.trace(db,rid));print(operations.triage(db,rid));print(engine.report(db,rid,root/'report.json'))
 def main():
     p=argparse.ArgumentParser();sub=p.add_subparsers(dest='cmd',required=True);sub.add_parser('demo')
     s=sub.add_parser('setup');s.add_argument('--db',required=True);s.add_argument('--contract',required=True)
@@ -20,6 +22,8 @@ def main():
     s=sub.add_parser('report');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True);s.add_argument('--out',required=True)
     s=sub.add_parser('fleet');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True);s.add_argument('--min-assets',type=int,default=2)
     s=sub.add_parser('triage');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True)
+    s=sub.add_parser('topology-edge');s.add_argument('--db',required=True);s.add_argument('--source',required=True);s.add_argument('--target',required=True);s.add_argument('--min-lag',type=int,required=True);s.add_argument('--max-lag',type=int,required=True)
+    s=sub.add_parser('propagation');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True)
     x=p.parse_args()
     if x.cmd=='demo':demo()
     elif x.cmd=='setup':engine.setup(x.db,json.loads(Path(x.contract).read_text()))
@@ -35,5 +39,7 @@ def main():
     elif x.cmd in ('classify','reconcile'):print(engine.reconcile(x.db,x.gap_minutes))
     elif x.cmd=='fleet':print(operations.fleet(x.db,x.run_id,x.min_assets))
     elif x.cmd=='triage':print(operations.triage(x.db,x.run_id))
+    elif x.cmd=='topology-edge':topology.edge(x.db,x.source,x.target,x.min_lag,x.max_lag)
+    elif x.cmd=='propagation':print(topology.trace(x.db,x.run_id))
     else:print(engine.report(x.db,x.run_id,x.out))
 if __name__=='__main__':main()
