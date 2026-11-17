@@ -1,0 +1,17 @@
+{"at":"2026-04-01T09:00:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":0,"reference_id":"A","sensor":"S","seq":1,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:00:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":0,"reference_id":"B","sensor":"S","seq":2,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:00:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":0,"reference_id":"C","sensor":"S","seq":3,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:05:00Z","device":"D","kind":"heartbeat","sensor":"S","seq":4,"value":7}
+{"at":"2026-04-01T09:10:00Z","device":"D","kind":"anchor","master_attested":true,"offset_seconds":0,"reference_id":"A","sensor":"S","seq":5,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:10:30Z","device":"D","kind":"anomaly","sensor":"S","seq":6,"value":7}
+{"at":"2026-04-01T09:20:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"A","sensor":"S","seq":7,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:20:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":0,"reference_id":"B","sensor":"S","seq":8,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:20:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":0,"reference_id":"C","sensor":"S","seq":9,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:25:00Z","device":"D","kind":"anomaly","sensor":"S","seq":10,"value":7}
+{"at":"2026-04-01T09:30:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"A","sensor":"S","seq":11,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:30:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"B","sensor":"S","seq":12,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:30:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"C","sensor":"S","seq":13,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:35:00Z","device":"D","kind":"anomaly","sensor":"S","seq":14,"value":7}
+{"at":"2026-04-01T09:40:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"A","sensor":"S","seq":15,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:40:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"B","sensor":"S","seq":16,"uncertainty_seconds":1}
+{"at":"2026-04-01T09:40:00Z","device":"D","kind":"anchor","master_attested":false,"offset_seconds":180,"reference_id":"C","sensor":"S","seq":17,"uncertainty_seconds":1}

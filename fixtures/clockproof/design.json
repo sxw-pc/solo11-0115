@@ -1,0 +1,15 @@
+{
+  "case_id": "clock-D-20260401",
+  "source_path": "fixtures/clockproof/points.jsonl",
+  "source_sha256": "b121b5cec42a5a989e47d82c9b9029042d6369fbcb5656a2078715a754cc4a9f",
+  "device": "D",
+  "references": [
+    "A",
+    "B",
+    "C"
+  ],
+  "master_reference": "A",
+  "max_drift_seconds_per_minute": 0.2,
+  "min_independent_references": 2,
+  "max_bridge_minutes": 15
+}
