@@ -1,0 +1,4 @@
+{"sensor":"S00","device":"D00","seq":1,"kind":"heartbeat","at":"2026-01-01T09:00:00Z","value":0}
+{"sensor":"S10","device":"D10","seq":1,"kind":"heartbeat","at":"2026-01-01T09:00:00Z","value":0}
+{"sensor":"S01","device":"D01","seq":1,"kind":"heartbeat","at":"2026-01-01T09:00:00Z","value":0}
+{"sensor":"S11","device":"D11","seq":1,"kind":"anomaly","at":"2026-01-01T09:00:00Z","value":10}

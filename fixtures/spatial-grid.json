@@ -1,0 +1,1 @@
+{"extent_km":[0,0,1,1],"threshold":5,"samples":[{"sensor":"S00","x_km":0,"y_km":0,"at":"2026-01-01T09:00:00Z","value":0},{"sensor":"S10","x_km":1,"y_km":0,"at":"2026-01-01T09:00:00Z","value":0},{"sensor":"S01","x_km":0,"y_km":1,"at":"2026-01-01T09:00:00Z","value":0},{"sensor":"S11","x_km":1,"y_km":1,"at":"2026-01-01T09:00:00Z","value":10}]}
