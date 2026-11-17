@@ -1,0 +1,2 @@
+{"sensor":"meter-A","device":"telemetry-A","seq":1,"at":"2030-06-01T00:00:00Z","kind":"heartbeat","value":10}
+{"sensor":"meter-A","device":"telemetry-A","seq":3,"at":"2030-06-01T00:00:02Z","kind":"heartbeat","value":30}

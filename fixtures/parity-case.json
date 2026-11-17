@@ -1,0 +1,1 @@
+{"sensor":"meter-A","device":"telemetry-A","seq_start":1,"seq_end":4,"field_prime":257,"parity":{"p0_sum":100,"p1_weighted":43,"p2_check":229},"parity_source":"transmitter-frame-block-17","allowed_protocols":["single_parity","dual_parity"],"sample_start":"2030-06-01T00:00:00Z","period_seconds":1}
