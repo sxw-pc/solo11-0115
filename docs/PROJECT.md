@@ -9,3 +9,5 @@
 跨设备裁定用 `fleet_decision` 保存同窗可信事件的共因判断；处置工单用 `work_order` 保存派工状态与优先级。单设备可信事件与跨设备共因事件有不同处置结论，维护影响与缺证据事件不会直接派发。
 
 拓扑传播用 `topology_edge` 冻结资产依赖与时延，`propagation_link` 记录实际可信事件的有序链接，`propagation_decision` 记录根事件及扩散范围。派工同时读取共因与传播结果；无重叠的顺序故障在拓扑证据成立时可升级。
+
+多参考时钟校准用 `clock_design` 冻结设计、源字节哈希和 anchor ID 集合。仲裁按原始瞬间分组（`Z`、`+00:00` 等等价写法视为同一时点），每个参考源至多一份独立支持：闭合偏移区间 `offset_seconds ± uncertainty_seconds` 需有非空公共交集，唯一达到 quorum 的最大支持集核证该时点，不相容锚隔离，同规模互斥最大集判争议，同参考重复行不增票。master-fallback 合同仅接受无反证的 `master_attested` 主参考单锚作为临时核证。`clock_anchor_verdict`、`clock_timepoint`、`clock_bridge`、`clock_segment`、`clock_certificate` 保存逐锚理由、桥接/跳变、校准段和每个事件的有界真实 UTC；所有数值由 `source`/`point` 中的原始行重算，原始行或字节被篡改即拒绝，不使用设备级统一好坏标记。

@@ -24,6 +24,10 @@ def main():
     s=sub.add_parser('triage');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True)
     s=sub.add_parser('topology-edge');s.add_argument('--db',required=True);s.add_argument('--source',required=True);s.add_argument('--target',required=True);s.add_argument('--min-lag',type=int,required=True);s.add_argument('--max-lag',type=int,required=True)
     s=sub.add_parser('propagation');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True)
+    s=sub.add_parser('clock-design');s.add_argument('--db',required=True);s.add_argument('design')
+    s=sub.add_parser('clock-certify');s.add_argument('--db',required=True);s.add_argument('--case-id',required=True)
+    s=sub.add_parser('clock-query');s.add_argument('--db',required=True);s.add_argument('--case-id',required=True);s.add_argument('at');s.add_argument('--contract',choices=('quorum-only','master-fallback'),default='quorum-only')
+    s=sub.add_parser('clock-report');s.add_argument('--db',required=True);s.add_argument('--case-id',required=True);s.add_argument('--out',required=True)
     x=p.parse_args()
     if x.cmd=='demo':demo()
     elif x.cmd=='setup':engine.setup(x.db,json.loads(Path(x.contract).read_text()))
@@ -41,5 +45,17 @@ def main():
     elif x.cmd=='triage':print(operations.triage(x.db,x.run_id))
     elif x.cmd=='topology-edge':topology.edge(x.db,x.source,x.target,x.min_lag,x.max_lag)
     elif x.cmd=='propagation':print(topology.trace(x.db,x.run_id))
+    elif x.cmd=='clock-design':
+        from .clockproof import register_design
+        print(json.dumps(register_design(x.db,x.design),ensure_ascii=False,sort_keys=True))
+    elif x.cmd=='clock-certify':
+        from .clockproof import certify
+        print(json.dumps(certify(x.db,x.case_id),ensure_ascii=False,sort_keys=True))
+    elif x.cmd=='clock-query':
+        from .clockproof import query_time
+        print(json.dumps(query_time(x.db,x.case_id,x.at,x.contract),ensure_ascii=False,sort_keys=True))
+    elif x.cmd=='clock-report':
+        from .clockproof import write_report
+        print(write_report(x.db,x.case_id,x.out))
     else:print(engine.report(x.db,x.run_id,x.out))
 if __name__=='__main__':main()
