@@ -1,6 +1,6 @@
 import argparse,json,tempfile
 from pathlib import Path
-from . import engine,operations,topology
+from . import engine,operations,topology,service
 def demo():
     root=Path(tempfile.mkdtemp(prefix='burstweave-'));db=root/'ledger.db'
     engine.setup(db,{'assets':['A','B'],'sensors':[{'id':'S1','asset':'A','role':'vibration'},{'id':'S2','asset':'B','role':'heat'}],'health':[{'sensor':s,'start':'2026-01-01T00:00:00Z','end':'2026-01-02T00:00:00Z','status':'active'} for s in ('S1','S2')]})
@@ -24,6 +24,9 @@ def main():
     s=sub.add_parser('triage');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True)
     s=sub.add_parser('topology-edge');s.add_argument('--db',required=True);s.add_argument('--source',required=True);s.add_argument('--target',required=True);s.add_argument('--min-lag',type=int,required=True);s.add_argument('--max-lag',type=int,required=True)
     s=sub.add_parser('propagation');s.add_argument('--db',required=True);s.add_argument('--run-id',type=int,required=True)
+    s=sub.add_parser('service-register');s.add_argument('--db',required=True);s.add_argument('--service-id',required=True);s.add_argument('--run-id',type=int,required=True);s.add_argument('file')
+    s=sub.add_parser('service-assess');s.add_argument('--db',required=True);s.add_argument('--service-id',required=True);s.add_argument('--run-id',type=int,required=True);s.add_argument('--topology',required=True,choices=('series','redundant_2'));s.add_argument('--assets',required=True);s.add_argument('--sla-minutes',type=int,required=True)
+    s=sub.add_parser('service-verify');s.add_argument('--db',required=True);s.add_argument('--service-id',required=True)
     x=p.parse_args()
     if x.cmd=='demo':demo()
     elif x.cmd=='setup':engine.setup(x.db,json.loads(Path(x.contract).read_text()))
@@ -41,5 +44,8 @@ def main():
     elif x.cmd=='triage':print(operations.triage(x.db,x.run_id))
     elif x.cmd=='topology-edge':topology.edge(x.db,x.source,x.target,x.min_lag,x.max_lag)
     elif x.cmd=='propagation':print(topology.trace(x.db,x.run_id))
+    elif x.cmd=='service-register':print(json.dumps(service.register(x.db,x.service_id,x.run_id,x.file),ensure_ascii=False))
+    elif x.cmd=='service-assess':print(json.dumps(service.assess(x.db,x.service_id,x.run_id,x.topology,x.assets.split(','),x.sla_minutes),ensure_ascii=False))
+    elif x.cmd=='service-verify':print(json.dumps(service.verify(x.db,x.service_id),ensure_ascii=False))
     else:print(engine.report(x.db,x.run_id,x.out))
 if __name__=='__main__':main()
