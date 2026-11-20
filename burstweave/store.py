@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS topology_edge(source_asset TEXT NOT NULL REFERENCES a
 CREATE TABLE IF NOT EXISTS propagation_link(run_id INT NOT NULL REFERENCES run(id),source_episode INT NOT NULL REFERENCES episode(id),target_episode INT NOT NULL REFERENCES episode(id),lag_minutes REAL NOT NULL,PRIMARY KEY(run_id,source_episode,target_episode));
 CREATE TABLE IF NOT EXISTS propagation_decision(run_id INT NOT NULL REFERENCES run(id),root_episode INT NOT NULL REFERENCES episode(id),status TEXT NOT NULL,episode_ids TEXT NOT NULL,reason TEXT NOT NULL,PRIMARY KEY(run_id,root_episode));
 CREATE TABLE IF NOT EXISTS repair_roster(id TEXT PRIMARY KEY,payload TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS repair_plan(id TEXT PRIMARY KEY,run_id INT NOT NULL REFERENCES run(id),strategy TEXT NOT NULL,digest TEXT NOT NULL,payload TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS repair_step(plan_id TEXT NOT NULL REFERENCES repair_plan(id),seq INT NOT NULL,kind TEXT NOT NULL,episode_id INT,asset TEXT,crew TEXT,skill TEXT,minutes INT,spare TEXT,spare_count INT,window_start TEXT,window_end TEXT,observes TEXT,after_seq INT,PRIMARY KEY(plan_id,seq));
+CREATE TABLE IF NOT EXISTS repair_event(id INTEGER PRIMARY KEY,plan_id TEXT NOT NULL REFERENCES repair_plan(id),seq INT NOT NULL,kind TEXT NOT NULL,at TEXT NOT NULL,detail TEXT NOT NULL,prev_hash TEXT NOT NULL,hash TEXT NOT NULL,UNIQUE(plan_id,seq,kind));
+CREATE TABLE IF NOT EXISTS spare_ledger(id INTEGER PRIMARY KEY,plan_id TEXT NOT NULL REFERENCES repair_plan(id),spare TEXT NOT NULL,delta INT NOT NULL,event_id INT NOT NULL REFERENCES repair_event(id),UNIQUE(event_id));
+CREATE TABLE IF NOT EXISTS repair_outcome(plan_id TEXT NOT NULL REFERENCES repair_plan(id),episode_id INT NOT NULL REFERENCES episode(id),status TEXT NOT NULL,basis TEXT NOT NULL,PRIMARY KEY(plan_id,episode_id));
+CREATE TABLE IF NOT EXISTS repair_certificate(plan_id TEXT NOT NULL REFERENCES repair_plan(id),episode_id INT NOT NULL REFERENCES episode(id),status TEXT NOT NULL,issued_at TEXT NOT NULL,basis TEXT NOT NULL,digest TEXT NOT NULL,PRIMARY KEY(plan_id,episode_id));
 """
 def connect(path):
     p=Path(path);p.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(p);db.row_factory=sqlite3.Row;db.executescript(SCHEMA);return db

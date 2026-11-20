@@ -9,3 +9,5 @@
 跨设备裁定用 `fleet_decision` 保存同窗可信事件的共因判断；处置工单用 `work_order` 保存派工状态与优先级。单设备可信事件与跨设备共因事件有不同处置结论，维护影响与缺证据事件不会直接派发。
 
 拓扑传播用 `topology_edge` 冻结资产依赖与时延，`propagation_link` 记录实际可信事件的有序链接，`propagation_decision` 记录根事件及扩散范围。派工同时读取共因与传播结果；无重叠的顺序故障在拓扑证据成立时可升级。
+
+维修执行用 `repair_roster` 冻结班次、技能、备件与程序，`repair_plan`/`repair_step` 冻结策略下实际可执行的步骤窗口，`repair_event` 以哈希链保存不可变现场事件，`spare_ledger` 记录备件领用，`repair_outcome` 关联工单与维修状态，`repair_certificate` 保存最终复工证书。诊断事件、现场执行、检查点观察和证书各自保留独立时间与来源；核验重新读取原始点、传播证据与执行台账，任何不一致都撤销复工结论。
