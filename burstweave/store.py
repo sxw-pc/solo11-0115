@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS topology_edge(source_asset TEXT NOT NULL REFERENCES a
 CREATE TABLE IF NOT EXISTS propagation_link(run_id INT NOT NULL REFERENCES run(id),source_episode INT NOT NULL REFERENCES episode(id),target_episode INT NOT NULL REFERENCES episode(id),lag_minutes REAL NOT NULL,PRIMARY KEY(run_id,source_episode,target_episode));
 CREATE TABLE IF NOT EXISTS propagation_decision(run_id INT NOT NULL REFERENCES run(id),root_episode INT NOT NULL REFERENCES episode(id),status TEXT NOT NULL,episode_ids TEXT NOT NULL,reason TEXT NOT NULL,PRIMARY KEY(run_id,root_episode));
 CREATE TABLE IF NOT EXISTS parity_case(id TEXT PRIMARY KEY,payload TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS recovery_run(id INTEGER PRIMARY KEY,case_id TEXT NOT NULL REFERENCES parity_case(id),protocol TEXT NOT NULL,version TEXT NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL,detail TEXT NOT NULL,created TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(case_id,protocol,version));
+CREATE TABLE IF NOT EXISTS recovery_item(run_id INT NOT NULL REFERENCES recovery_run(id),seq INT NOT NULL,state TEXT NOT NULL,value INT,detail TEXT,PRIMARY KEY(run_id,seq));
 """
 def connect(path):
     p=Path(path);p.parent.mkdir(parents=True,exist_ok=True);db=sqlite3.connect(p);db.row_factory=sqlite3.Row;db.executescript(SCHEMA);return db

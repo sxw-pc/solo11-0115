@@ -9,3 +9,5 @@
 跨设备裁定用 `fleet_decision` 保存同窗可信事件的共因判断；处置工单用 `work_order` 保存派工状态与优先级。单设备可信事件与跨设备共因事件有不同处置结论，维护影响与缺证据事件不会直接派发。
 
 拓扑传播用 `topology_edge` 冻结资产依赖与时延，`propagation_link` 记录实际可信事件的有序链接，`propagation_decision` 记录根事件及扩散范围。派工同时读取共因与传播结果；无重叠的顺序故障在拓扑证据成立时可升级。
+
+序号缺口恢复账用 `parity_case` 封存同设备实收点与合成发送端 GF(257) 校验帧（p0_sum=Σv、p1_weighted=Σi·v、p2_check=Σi²·v，i 为块内 1 起位置），`recovery_run`/`recovery_item` 按冻结协议 `gf257-recovery-v1` 记录解码结论。`single_parity` 只授权 p0 方程，`dual_parity` 用 p0/p1 求解并以独立 p2 校验候选；p2 失败、帧不一致、候选落在声明值域外、实收点哈希/原文被改写、块内身份冲突都各有确定状态，秩不足时保留约束方程与未定状态，禁止零填充或插值冒充源点。恢复值只入账不回写 `point`，不改写 episode、health 与序号缺口证据；每次运行的版本哈希覆盖封存负载、协议、实收点哈希与身份冲突，输入变化产生新版本行而旧账保留。迁移见 `migrations/001_recovery_ledger.sql`，报告用 `recovery-report` 导出 JSON 与 Markdown。
